@@ -1,0 +1,22 @@
+schema: '2.0'
+stages:
+  download:
+    cmd: python scripts/download_data.py
+    deps:
+    - path: scripts/download_data.py
+      hash: md5
+      md5: 2234ba7cdf915f6f5715cd139da292be
+      size: 3885
+    outs:
+    - path: data/category_tree.csv
+      hash: md5
+      md5: 367584c60ef622ea8601c682d8491bb8
+      size: 108166
+    - path: data/labeled_train.parquet
+      hash: md5
+      md5: b5f749eee080cbd28ff6e80f5f2a8591
+      size: 226197020
+    - path: data/unlabeled_train.parquet
+      hash: md5
+      md5: 9f001f8444f5adf663bf87de2b98dde8
+      size: 218463729

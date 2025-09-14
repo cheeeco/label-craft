@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "label-craft"
+version = "0.1.0"
+description = "Label craft"
+authors = ["Alexander Sokolov <sokolov23al@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+dvc = "^3.0.0"
+hydra-core = "^1.3.0"
+requests = "^2.31.0"
+omegaconf = "^2.3.0"
+loguru = "^0.7.3"
+
+[tool.poetry.group.dev.dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,17 @@
+# Dataset URLs and metadata
+datasets:
+  files:
+    category_tree:
+      url: https://storage.yandexcloud.net/vtb-competition-25-private/Task1/fin/category_tree.csv
+      filename: "category_tree.csv"
+    labeled_train:
+      url: https://storage.yandexcloud.net/vtb-competition-25-private/Task1/fin/labeled_train.parquet
+      filename: "labeled_train.parquet"
+    unlabeled_train:
+      url: https://storage.yandexcloud.net/vtb-competition-25-private/Task1/fin/unlabeled_train.parquet
+      filename: "unlabeled_train.parquet"
+
+download:
+  chunk_size: 8192
+  timeout: 30
+  retry_attempts: 3

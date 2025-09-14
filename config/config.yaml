@@ -1,0 +1,5 @@
+defaults:
+  - data: datasets
+  - _self_
+
+output_dir: data/
