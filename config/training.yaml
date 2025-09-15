@@ -1,0 +1,45 @@
+# Training configuration
+defaults:
+  - data: datasets
+  - _self_
+
+# Data path
+data_path: "data/labeled_train.parquet"
+
+# Model hyperparameters
+model:
+  learning_rate: 2e-5
+  dropout: 0.1
+
+# Data hyperparameters
+data:
+  batch_size: 16
+  max_length: 256
+  test_size: 0.2
+  val_size: 0.1
+
+# Training hyperparameters
+training:
+  max_epochs: 10
+  gradient_clip_val: 1.0
+  log_every_n_steps: 50
+  precision: 16  # 16 if GPU available, 32 otherwise
+
+# Callbacks
+callbacks:
+  early_stopping:
+    patience: 3
+    monitor: "val_f1"
+    mode: "max"
+  
+  model_checkpoint:
+    monitor: "val_f1"
+    mode: "max"
+    save_top_k: 1
+    filename: "best-model-{epoch:02d}-{val_f1:.2f}"
+    save_last: true
+
+# Logging
+logging:
+  name: "text_classifier"
+  log_dir: "logs"
