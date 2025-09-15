@@ -3,6 +3,7 @@ name = "label-craft"
 version = "0.1.0"
 description = "Label craft"
 authors = ["Alexander Sokolov <sokolov23al@gmail.com>"]
+packages = [{include = "label_craft"}]
 
 [tool.poetry.dependencies]
 python = "^3.8"
