@@ -11,12 +11,15 @@ import time
 from omegaconf import DictConfig
 import hydra
 from hydra.core.config_store import ConfigStore
+from hydra import initialize, compose
 
-# Config structure
-@hydra.main(version_base=None, config_path="../config", config_name="config")
-def main(cfg: DictConfig) -> None:
+def main() -> None:
     """Main function to download all dataset files using Hydra configuration."""
     try:
+        # Initialize Hydra and compose config without creating outputs folder
+        with initialize(config_path="../config", version_base=None):
+            cfg = compose(config_name="config")
+        
         # Get output directory and download config
         output_dir = Path(cfg.output_dir)
         download_config = cfg.data.download
