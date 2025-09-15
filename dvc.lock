@@ -5,8 +5,8 @@ stages:
     deps:
     - path: scripts/download_data.py
       hash: md5
-      md5: 2234ba7cdf915f6f5715cd139da292be
-      size: 3885
+      md5: a2f569f94c7ab6abee83cbe865ae8139
+      size: 4123
     outs:
     - path: data/category_tree.csv
       hash: md5
