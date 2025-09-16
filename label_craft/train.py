@@ -10,8 +10,8 @@ import torch
 from omegaconf import DictConfig
 from hydra import initialize, compose
 
-from label_craft.data_module import TextDataModule
-from label_craft.model import TextClassifier
+from label_craft.data.data_module import TextDataModule
+from label_craft.models.model import TextClassifier
 
 
 def main() -> None:
@@ -19,7 +19,7 @@ def main() -> None:
     
     # Initialize Hydra and compose config without creating outputs folder
     with initialize(config_path="../config", version_base=None):
-        cfg = compose(config_name="training")
+        cfg = compose(config_name="train")
     
     # Data module
     data_module = TextDataModule(cfg)

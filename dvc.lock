@@ -5,8 +5,8 @@ stages:
     deps:
     - path: label_craft/scripts/download_data.py
       hash: md5
-      md5: 0c8b8c7cc32507562acf19bed5b9041f
-      size: 4018
+      md5: d8b92db7c62805aca5334d02b70c1bad
+      size: 4126
     outs:
     - path: data/category_tree.csv
       hash: md5

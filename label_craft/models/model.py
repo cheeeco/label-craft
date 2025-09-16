@@ -18,8 +18,8 @@ class TextClassifier(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         
-        # Load pre-trained LaBSE model
-        self.encoder = AutoModel.from_pretrained('cointegrated/LaBSE-en-ru')
+        # Load pre-trained model
+        self.encoder = AutoModel.from_pretrained(cfg.model.name)
         
         # Classification head
         self.dropout = nn.Dropout(cfg.model.dropout)
@@ -105,15 +105,28 @@ class TextClassifier(pl.LightningModule):
         return loss
     
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.cfg.model.learning_rate)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode='min', factor=0.5, patience=2
-        )
+        # Get optimizer and scheduler configs
+        opt_cfg = self.hparams.cfg.optimizer
+        sched_cfg = self.hparams.cfg.scheduler
+        
+        # Create optimizer
+        if opt_cfg.name == "AdamW":
+            optimizer = torch.optim.AdamW(self.parameters(), lr=opt_cfg.learning_rate)
+        else:
+            raise ValueError(f"Unsupported optimizer: {opt_cfg.name}")
+        
+        # Create scheduler
+        if sched_cfg.name == "ReduceLROnPlateau":
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer, mode=sched_cfg.mode, factor=sched_cfg.factor, patience=sched_cfg.patience
+            )
+        else:
+            raise ValueError(f"Unsupported scheduler: {sched_cfg.name}")
         
         return {
             'optimizer': optimizer,
             'lr_scheduler': {
                 'scheduler': scheduler,
-                'monitor': 'val_loss'
+                'monitor': sched_cfg.monitor
             }
         }

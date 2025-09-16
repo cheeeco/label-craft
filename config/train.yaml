@@ -1,22 +1,12 @@
 # Training configuration
 defaults:
-  - data: datasets
+  - data: sources
+  - data: processing
+  - models: base_model
   - _self_
 
 # Data path
 data_path: "data/labeled_train.parquet"
-
-# Model hyperparameters
-model:
-  learning_rate: 2e-5
-  dropout: 0.1
-
-# Data hyperparameters
-data:
-  batch_size: 16
-  max_length: 256
-  test_size: 0.2
-  val_size: 0.1
 
 # Training hyperparameters
 training:

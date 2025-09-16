@@ -55,7 +55,7 @@ class TextDataModule(pl.LightningDataModule):
         self.val_size = cfg.data.val_size
         
         # Initialize tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained('cointegrated/LaBSE-en-ru')
+        self.tokenizer = AutoTokenizer.from_pretrained(cfg.model.name)
         self.label_encoder = LabelEncoder()
         
     def setup(self, stage=None):
