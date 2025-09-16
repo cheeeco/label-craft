@@ -3,6 +3,7 @@ Data module for text classification using PyTorch Lightning
 """
 
 import pandas as pd
+import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import LabelEncoder
@@ -50,13 +51,14 @@ class TextDataModule(pl.LightningDataModule):
     def __init__(self, cfg: DictConfig):
         super().__init__()
         self.data_path = cfg.data_path
-        self.batch_size = cfg.data.batch_size
-        self.max_length = cfg.data.max_length
-        self.test_size = cfg.data.test_size
-        self.val_size = cfg.data.val_size
+        self.batch_size = cfg.data.data.batch_size
+        self.max_length = cfg.data.data.max_length
+        self.test_size = cfg.data.data.test_size
+        self.val_size = cfg.data.data.val_size
+        self.training_size = cfg.data.data.get('training_size', 1.0)
         
         # Initialize tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(cfg.model.name)
+        self.tokenizer = AutoTokenizer.from_pretrained(cfg.models.model.name)
         self.label_encoder = LabelEncoder()
         
     def setup(self, stage=None):
@@ -76,21 +78,50 @@ class TextDataModule(pl.LightningDataModule):
         texts_filtered = texts[mask]
         labels_filtered = labels[mask]
         
+        # Sample training data if training_size < 1.0
+        if self.training_size < 1.0:
+            # Use stratified sampling to maintain class distribution
+            from sklearn.model_selection import train_test_split
+            sample_size = int(len(texts_filtered) * self.training_size)
+            if sample_size < len(texts_filtered):
+                texts_filtered, _, labels_filtered, _ = train_test_split(
+                    texts_filtered, labels_filtered, 
+                    train_size=sample_size, 
+                    random_state=42, 
+                    stratify=labels_filtered
+                )
+        
         logger.info(f"Original samples: {len(texts)}")
         logger.info(f"After filtering rare categories: {len(texts_filtered)}")
+        logger.info(f"Training size: {self.training_size:.1%}")
+        logger.info(f"Final samples for training: {len(texts_filtered)}")
         logger.info(f"Number of categories: {len(valid_labels)}")
         
-        # Split data with stratification
-        X_temp, X_test, y_temp, y_test = train_test_split(
-            texts_filtered, labels_filtered, test_size=self.test_size, 
-            random_state=42, stratify=labels_filtered
-        )
-        
-        val_ratio = self.val_size / (1 - self.test_size)
-        X_train, X_val, y_train, y_val = train_test_split(
-            X_temp, y_temp, test_size=val_ratio, 
-            random_state=42, stratify=y_temp
-        )
+        # Split data with stratification (if possible)
+        try:
+            X_temp, X_test, y_temp, y_test = train_test_split(
+                texts_filtered, labels_filtered, test_size=self.test_size, 
+                random_state=42, stratify=labels_filtered
+            )
+            
+            val_ratio = self.val_size / (1 - self.test_size)
+            X_train, X_val, y_train, y_val = train_test_split(
+                X_temp, y_temp, test_size=val_ratio, 
+                random_state=42, stratify=y_temp
+            )
+        except ValueError:
+            # Fallback to non-stratified split if stratification fails
+            logger.warning("Stratification failed, using random split")
+            X_temp, X_test, y_temp, y_test = train_test_split(
+                texts_filtered, labels_filtered, test_size=self.test_size, 
+                random_state=42
+            )
+            
+            val_ratio = self.val_size / (1 - self.test_size)
+            X_train, X_val, y_train, y_val = train_test_split(
+                X_temp, y_temp, test_size=val_ratio, 
+                random_state=42
+            )
         
         # Create datasets
         self.train_dataset = TextClassificationDataset(

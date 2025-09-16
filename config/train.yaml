@@ -1,6 +1,5 @@
 # Training configuration
 defaults:
-  - data: sources
   - data: processing
   - models: base_model
   - _self_

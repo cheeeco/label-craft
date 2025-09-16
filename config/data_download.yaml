@@ -1,0 +1,6 @@
+# Data download configuration
+defaults:
+  - data: sources
+  - _self_
+
+output_dir: data/

@@ -18,7 +18,7 @@ def main() -> None:
     try:
         # Initialize Hydra and compose config without creating outputs folder
         with initialize(config_path="../../config", version_base=None):
-            cfg = compose(config_name="config")
+            cfg = compose(config_name="data_download")
         
         # Get output directory and download config
         output_dir = Path(cfg.output_dir)

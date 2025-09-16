@@ -208,3 +208,6 @@ __marimo__/
 
 # Dataset files
 data/*
+
+# Logs
+logs/

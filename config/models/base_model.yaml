@@ -3,6 +3,8 @@ model:
   name: "cointegrated/LaBSE-en-ru"
   learning_rate: 2e-5
   dropout: 0.1
+  freeze_encoder: true
+  freeze_layers: 6  # 0=none, -1=all, N=first N layers
 
 # Optimizer configuration
 optimizer:

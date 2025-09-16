@@ -54,14 +54,14 @@ def main() -> None:
     )
     
     # Logger
-    logger = TensorBoardLogger(cfg.logging.log_dir, name=cfg.logging.name)
+    tb_logger = TensorBoardLogger(cfg.logging.log_dir, name=cfg.logging.name)
     
     # Trainer
     precision = cfg.training.precision if torch.cuda.is_available() else 32
     trainer = pl.Trainer(
         max_epochs=cfg.training.max_epochs,
         callbacks=[checkpoint_callback, early_stopping],
-        logger=logger,
+        logger=tb_logger,
         accelerator='auto',
         devices='auto',
         precision=precision,
