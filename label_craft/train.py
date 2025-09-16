@@ -9,6 +9,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 import torch
 from omegaconf import DictConfig
 from hydra import initialize, compose
+from loguru import logger
 
 from label_craft.data.data_module import TextDataModule
 from label_craft.models.model import TextClassifier
@@ -28,10 +29,10 @@ def main() -> None:
     data_module.setup()
     num_classes = data_module.num_classes
     
-    print(f"Number of classes: {num_classes}")
-    print(f"Training samples: {len(data_module.train_dataset)}")
-    print(f"Validation samples: {len(data_module.val_dataset)}")
-    print(f"Test samples: {len(data_module.test_dataset)}")
+    logger.info(f"Classes: {num_classes}")
+    logger.info(f"Train samples: {len(data_module.train_dataset)}")
+    logger.info(f"Val samples: {len(data_module.val_dataset)}")
+    logger.info(f"Test samples: {len(data_module.test_dataset)}")
     
     # Model
     model = TextClassifier(num_classes=num_classes, cfg=cfg)
@@ -56,26 +57,27 @@ def main() -> None:
     logger = TensorBoardLogger(cfg.logging.log_dir, name=cfg.logging.name)
     
     # Trainer
+    precision = cfg.training.precision if torch.cuda.is_available() else 32
     trainer = pl.Trainer(
         max_epochs=cfg.training.max_epochs,
         callbacks=[checkpoint_callback, early_stopping],
         logger=logger,
         accelerator='auto',
         devices='auto',
-        precision=cfg.training.precision if torch.cuda.is_available() else 32,
+        precision=precision,
         gradient_clip_val=cfg.training.gradient_clip_val,
         log_every_n_steps=cfg.training.log_every_n_steps
     )
     
     # Train
-    print("Starting training...")
+    logger.info("Starting training...")
     trainer.fit(model, data_module)
     
     # Test
-    print("Testing...")
+    logger.info("Testing...")
     trainer.test(model, data_module)
     
-    print("Training completed!")
+    logger.info("Training completed!")
 
 
 if __name__ == "__main__":

@@ -26,13 +26,16 @@ class TextClassifier(pl.LightningModule):
         self.classifier = nn.Linear(self.encoder.config.hidden_size, num_classes)
         
         # Metrics
-        self.train_acc = Accuracy(task='multiclass', num_classes=num_classes)
-        self.val_acc = Accuracy(task='multiclass', num_classes=num_classes)
-        self.test_acc = Accuracy(task='multiclass', num_classes=num_classes)
+        acc_kwargs = {'task': 'multiclass', 'num_classes': num_classes}
+        f1_kwargs = {**acc_kwargs, 'average': 'macro'}
         
-        self.train_f1 = F1Score(task='multiclass', num_classes=num_classes, average='macro')
-        self.val_f1 = F1Score(task='multiclass', num_classes=num_classes, average='macro')
-        self.test_f1 = F1Score(task='multiclass', num_classes=num_classes, average='macro')
+        self.train_acc = Accuracy(**acc_kwargs)
+        self.val_acc = Accuracy(**acc_kwargs)
+        self.test_acc = Accuracy(**acc_kwargs)
+        
+        self.train_f1 = F1Score(**f1_kwargs)
+        self.val_f1 = F1Score(**f1_kwargs)
+        self.test_f1 = F1Score(**f1_kwargs)
         
     def forward(self, input_ids, attention_mask):
         # Get embeddings from LaBSE
@@ -111,14 +114,17 @@ class TextClassifier(pl.LightningModule):
         
         # Create optimizer
         if opt_cfg.name == "AdamW":
-            optimizer = torch.optim.AdamW(self.parameters(), lr=opt_cfg.learning_rate)
+            optimizer = torch.optim.AdamW(
+                self.parameters(), lr=opt_cfg.learning_rate
+            )
         else:
             raise ValueError(f"Unsupported optimizer: {opt_cfg.name}")
         
         # Create scheduler
         if sched_cfg.name == "ReduceLROnPlateau":
             scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                optimizer, mode=sched_cfg.mode, factor=sched_cfg.factor, patience=sched_cfg.patience
+                optimizer, mode=sched_cfg.mode, 
+                factor=sched_cfg.factor, patience=sched_cfg.patience
             )
         else:
             raise ValueError(f"Unsupported scheduler: {sched_cfg.name}")

@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split
 import pytorch_lightning as pl
 from transformers import AutoTokenizer
 from omegaconf import DictConfig
+from loguru import logger
 
 
 class TextClassificationDataset(Dataset):
@@ -75,9 +76,9 @@ class TextDataModule(pl.LightningDataModule):
         texts_filtered = texts[mask]
         labels_filtered = labels[mask]
         
-        print(f"Original samples: {len(texts)}")
-        print(f"After filtering rare categories: {len(texts_filtered)}")
-        print(f"Number of categories: {len(valid_labels)}")
+        logger.info(f"Original samples: {len(texts)}")
+        logger.info(f"After filtering rare categories: {len(texts_filtered)}")
+        logger.info(f"Number of categories: {len(valid_labels)}")
         
         # Split data with stratification
         X_temp, X_test, y_temp, y_test = train_test_split(
@@ -85,15 +86,22 @@ class TextDataModule(pl.LightningDataModule):
             random_state=42, stratify=labels_filtered
         )
         
+        val_ratio = self.val_size / (1 - self.test_size)
         X_train, X_val, y_train, y_val = train_test_split(
-            X_temp, y_temp, test_size=self.val_size/(1-self.test_size), 
+            X_temp, y_temp, test_size=val_ratio, 
             random_state=42, stratify=y_temp
         )
         
         # Create datasets
-        self.train_dataset = TextClassificationDataset(X_train, y_train, self.tokenizer, self.max_length)
-        self.val_dataset = TextClassificationDataset(X_val, y_val, self.tokenizer, self.max_length)
-        self.test_dataset = TextClassificationDataset(X_test, y_test, self.tokenizer, self.max_length)
+        self.train_dataset = TextClassificationDataset(
+            X_train, y_train, self.tokenizer, self.max_length
+        )
+        self.val_dataset = TextClassificationDataset(
+            X_val, y_val, self.tokenizer, self.max_length
+        )
+        self.test_dataset = TextClassificationDataset(
+            X_test, y_test, self.tokenizer, self.max_length
+        )
         
         self.num_classes = len(self.label_encoder.classes_)
         
