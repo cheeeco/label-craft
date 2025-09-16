@@ -1,8 +1,8 @@
 stages:
   download:
-    cmd: python scripts/download_data.py
+    cmd: python label_craft/scripts/download_data.py
     deps:
-      - scripts/download_data.py
+      - label_craft/scripts/download_data.py
     outs:
       - data/category_tree.csv
       - data/labeled_train.parquet

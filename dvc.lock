@@ -1,12 +1,12 @@
 schema: '2.0'
 stages:
   download:
-    cmd: python scripts/download_data.py
+    cmd: python label_craft/scripts/download_data.py
     deps:
-    - path: scripts/download_data.py
+    - path: label_craft/scripts/download_data.py
       hash: md5
-      md5: a2f569f94c7ab6abee83cbe865ae8139
-      size: 4123
+      md5: 0c8b8c7cc32507562acf19bed5b9041f
+      size: 4018
     outs:
     - path: data/category_tree.csv
       hash: md5
