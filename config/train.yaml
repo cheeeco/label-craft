@@ -32,3 +32,12 @@ callbacks:
 logging:
   name: "text_classifier"
   log_dir: "logs"
+
+# MLflow configuration
+mlflow:
+  experiment_name: "label-craft-text-classification"
+  run_name: null  # Will be auto-generated if null
+  tracking_uri: null  # Use local file store if null
+  tags:
+    project: "label-craft"
+    task: "text-classification"

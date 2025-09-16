@@ -10,9 +10,11 @@ import torch
 from omegaconf import DictConfig
 from hydra import initialize, compose
 from loguru import logger
+from datetime import datetime
 
 from label_craft.data.data_module import TextDataModule
 from label_craft.models.model import TextClassifier
+from label_craft.logging import MLflowLogger
 
 
 def main() -> None:
@@ -53,15 +55,27 @@ def main() -> None:
         verbose=True
     )
     
-    # Logger
+    # Loggers
     tb_logger = TensorBoardLogger(cfg.logging.log_dir, name=cfg.logging.name)
+    
+    # MLflow logger
+    run_name = cfg.mlflow.run_name or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    mlflow_logger = MLflowLogger(
+        experiment_name=cfg.mlflow.experiment_name,
+        run_name=run_name,
+        tracking_uri=cfg.mlflow.tracking_uri,
+        tags=cfg.mlflow.tags
+    )
+    
+    # Combine loggers
+    loggers = [tb_logger, mlflow_logger]
     
     # Trainer
     precision = cfg.training.precision if torch.cuda.is_available() else 32
     trainer = pl.Trainer(
         max_epochs=cfg.training.max_epochs,
         callbacks=[checkpoint_callback, early_stopping],
-        logger=tb_logger,
+        logger=loggers,
         accelerator='auto',
         devices='auto',
         precision=precision,
@@ -77,7 +91,19 @@ def main() -> None:
     logger.info("Testing...")
     trainer.test(model, data_module)
     
+    # Log model to MLflow
+    logger.info("Logging model to MLflow...")
+    mlflow_logger.log_model(model, "model")
+    
+    # Log additional artifacts
+    mlflow_logger.log_artifacts("logs", "logs")
+    
+    # Finalize MLflow run
+    mlflow_logger.finalize("FINISHED")
+    
     logger.info("Training completed!")
+    logger.info(f"MLflow run ID: {mlflow_logger.run_id}")
+    logger.info(f"MLflow experiment: {mlflow_logger.experiment_name}")
 
 
 if __name__ == "__main__":
