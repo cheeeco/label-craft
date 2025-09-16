@@ -56,6 +56,8 @@ class TextDataModule(pl.LightningDataModule):
         self.test_size = cfg.data.data.test_size
         self.val_size = cfg.data.data.val_size
         self.training_size = cfg.data.data.get('training_size', 1.0)
+        self.max_samples_per_category = cfg.data.data.get('max_samples_per_category', 5000)
+        self.num_workers = cfg.data.data.get('num_workers', 0)
         
         # Initialize tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(cfg.models.model.name)
@@ -91,11 +93,17 @@ class TextDataModule(pl.LightningDataModule):
                     stratify=labels_filtered
                 )
         
+        # Limit samples per category to prevent imbalance
+        texts_filtered, labels_filtered = self._limit_samples_per_category(
+            texts_filtered, labels_filtered
+        )
+        
         logger.info(f"Original samples: {len(texts)}")
         logger.info(f"After filtering rare categories: {len(texts_filtered)}")
         logger.info(f"Training size: {self.training_size:.1%}")
-        logger.info(f"Final samples for training: {len(texts_filtered)}")
+        logger.info(f"After category limiting: {len(texts_filtered)}")
         logger.info(f"Number of categories: {len(valid_labels)}")
+        logger.info(f"DataLoader workers: {self.num_workers}")
         
         # Split data with stratification (if possible)
         try:
@@ -135,12 +143,75 @@ class TextDataModule(pl.LightningDataModule):
         )
         
         self.num_classes = len(self.label_encoder.classes_)
+    
+    def _limit_samples_per_category(self, texts, labels):
+        """Limit the number of samples per category to prevent imbalance"""
+        if self.max_samples_per_category is None or self.max_samples_per_category <= 0:
+            return texts, labels
+        
+        # Convert to DataFrame for easier manipulation
+        df = pd.DataFrame({'text': texts, 'label': labels})
+        
+        # Group by label and sample up to max_samples_per_category
+        sampled_dfs = []
+        category_stats = {}
+        
+        for label in df['label'].unique():
+            label_df = df[df['label'] == label]
+            category_count = len(label_df)
+            
+            if category_count > self.max_samples_per_category:
+                # Sample max_samples_per_category samples
+                sampled_df = label_df.sample(
+                    n=self.max_samples_per_category, 
+                    random_state=42
+                )
+                category_stats[label] = f"{self.max_samples_per_category}/{category_count}"
+            else:
+                # Keep all samples
+                sampled_df = label_df
+                category_stats[label] = f"{category_count}/{category_count}"
+            
+            sampled_dfs.append(sampled_df)
+        
+        # Combine all sampled data
+        result_df = pd.concat(sampled_dfs, ignore_index=True)
+        
+        # Log category statistics
+        limited_categories = sum(1 for v in category_stats.values() if '/' in v and v.split('/')[0] != v.split('/')[1])
+        total_categories = len(category_stats)
+        
+        logger.info(f"Category sampling limit: {self.max_samples_per_category}")
+        logger.info(f"Categories with samples limited: {limited_categories}/{total_categories}")
+        
+        # Show some examples of limited categories
+        if limited_categories > 0:
+            limited_examples = [f"{k}: {v}" for k, v in category_stats.items() if '/' in v and v.split('/')[0] != v.split('/')[1]][:5]
+            logger.info(f"Examples of limited categories: {limited_examples}")
+        
+        return result_df['text'], result_df['label'].values
         
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.batch_size, shuffle=True)
+        return DataLoader(
+            self.train_dataset, 
+            batch_size=self.batch_size, 
+            shuffle=True,
+            num_workers=self.num_workers,
+            pin_memory=True if self.num_workers > 0 else False
+        )
     
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size)
+        return DataLoader(
+            self.val_dataset, 
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=True if self.num_workers > 0 else False
+        )
     
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size)
+        return DataLoader(
+            self.test_dataset, 
+            batch_size=self.batch_size,
+            num_workers=self.num_workers,
+            pin_memory=True if self.num_workers > 0 else False
+        )

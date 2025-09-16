@@ -10,6 +10,7 @@ from torchmetrics import Accuracy, F1Score
 import torch.nn.functional as F
 from omegaconf import DictConfig
 from loguru import logger
+from label_craft.metrics import HierarchicalDistanceAccuracy
 
 
 class TextClassifier(pl.LightningModule):
@@ -40,6 +41,9 @@ class TextClassifier(pl.LightningModule):
         self.train_f1 = F1Score(**f1_kwargs)
         self.val_f1 = F1Score(**f1_kwargs)
         self.test_f1 = F1Score(**f1_kwargs)
+        
+        # Initialize HDA metric
+        self.hda_metric = HierarchicalDistanceAccuracy('data/category_tree.csv')
     
     def _freeze_encoder_layers(self, model_cfg):
         """Freeze encoder layers based on configuration"""
@@ -111,9 +115,13 @@ class TextClassifier(pl.LightningModule):
         self.train_acc(preds, labels)
         self.train_f1(preds, labels)
         
+        # Calculate HDA metric
+        hda_score = self.hda_metric(labels, preds)
+        
         self.log('train_loss', loss, prog_bar=True)
         self.log('train_acc', self.train_acc, prog_bar=True)
         self.log('train_f1', self.train_f1, prog_bar=True)
+        self.log('train_hda', hda_score, prog_bar=True)
         
         return loss
     
@@ -130,9 +138,13 @@ class TextClassifier(pl.LightningModule):
         self.val_acc(preds, labels)
         self.val_f1(preds, labels)
         
+        # Calculate HDA metric
+        hda_score = self.hda_metric(labels, preds)
+        
         self.log('val_loss', loss, prog_bar=True)
         self.log('val_acc', self.val_acc, prog_bar=True)
         self.log('val_f1', self.val_f1, prog_bar=True)
+        self.log('val_hda', hda_score, prog_bar=True)
         
         return loss
     
@@ -149,9 +161,19 @@ class TextClassifier(pl.LightningModule):
         self.test_acc(preds, labels)
         self.test_f1(preds, labels)
         
+        # Calculate HDA metric
+        hda_score = self.hda_metric(labels, preds)
+        
+        # Get detailed HDA statistics
+        hda_details = self.hda_metric.get_detailed_scores(labels, preds)
+        
         self.log('test_loss', loss)
         self.log('test_acc', self.test_acc)
         self.log('test_f1', self.test_f1)
+        self.log('test_hda', hda_score)
+        self.log('test_exact_match_rate', hda_details['exact_match_rate'])
+        self.log('test_partial_match_rate', hda_details['partial_match_rate'])
+        self.log('test_mean_level_diff', hda_details['mean_level_diff'])
         
         return loss
     
