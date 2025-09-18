@@ -10,7 +10,9 @@ datasets:
     unlabeled_train:
       url: https://storage.yandexcloud.net/vtb-competition-25-private/Task1/fin/unlabeled_train.parquet
       filename: "unlabeled_train.parquet"
-
+    labeled_test:
+      url: https://storage.yandexcloud.net/vtb-competition-25-private/Task1/fin/unlabeled_special_prize.parquet
+      filename: "labeled_test.parquet"
 download:
   chunk_size: 8192
   timeout: 30

@@ -1,0 +1,25 @@
+# Inference configuration
+defaults:
+  - data: processing
+  - models: base_model
+  - _self_
+
+# Test data path
+test_data_path: "data/labeled_test.parquet"
+
+# Model checkpoint path (update this to point to your actual checkpoint)
+# Example: "logs/text_classifier/version_X/checkpoints/best-model-XX-XX.XX.ckpt"
+model_checkpoint: "logs/text_classifier/version_11/checkpoints/best-model.ckpt"
+
+# Inference settings
+inference:
+  batch_size: 32
+  device: "auto"  # auto, cpu, or cuda
+  output_predictions: true
+  predictions_file: "predictions.csv"
+
+# Evaluation settings (only if ground truth labels are available)
+evaluation:
+  compute_metrics: true
+  metrics: ["accuracy", "f1", "hda"]
+  detailed_report: true
