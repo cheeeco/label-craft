@@ -15,16 +15,13 @@ from label_craft.metrics import HierarchicalDistanceAccuracy
 from label_craft.models.model import TextClassifier
 
 
-def load_model(
-    checkpoint_path: str, cfg: DictConfig, num_classes: int
-) -> TextClassifier:
+def load_model(checkpoint_path: str, cfg: DictConfig) -> TextClassifier:
     """Load trained model from checkpoint"""
     logger.info(f"Loading model from {checkpoint_path}")
 
-    # Load model from checkpoint
-    model = TextClassifier.load_from_checkpoint(
-        checkpoint_path, num_classes=num_classes, cfg=cfg, strict=False
-    )
+    # Load model from checkpoint without specifying num_classes
+    # The model will use the original number of classes from training
+    model = TextClassifier.load_from_checkpoint(checkpoint_path, cfg=cfg, strict=False)
 
     # Set to evaluation mode
     model.eval()
@@ -110,7 +107,6 @@ def main() -> None:
     # Create data module for preprocessing
     data_module = TextDataModule(cfg)
     data_module.setup()
-    num_classes = data_module.num_classes
 
     # Create test dataset using the same preprocessing as training
     from label_craft.data.data_module import TextClassificationDataset
@@ -118,8 +114,24 @@ def main() -> None:
     # Prepare texts and labels for test data
     test_texts = test_df["source_name"]
     if has_labels:
+        # Filter test data to only include categories that were seen during training
+        train_categories = set(data_module.label_encoder.classes_)
+        test_categories = set(test_df["cat_id"].unique())
+        common_categories = train_categories.intersection(test_categories)
+
+        logger.info(f"Training categories: {len(train_categories)}")
+        logger.info(f"Test categories: {len(test_categories)}")
+        logger.info(f"Common categories: {len(common_categories)}")
+
+        # Filter test data to only include common categories
+        mask = test_df["cat_id"].isin(common_categories)
+        test_df_filtered = test_df[mask].copy()
+        test_texts = test_df_filtered["source_name"]
+
+        logger.info(f"Filtered test samples: {len(test_texts)} (from {len(test_df)})")
+
         # Use the same label encoder from training
-        test_labels = data_module.label_encoder.transform(test_df["cat_id"])
+        test_labels = data_module.label_encoder.transform(test_df_filtered["cat_id"])
     else:
         # Create dummy labels for inference
         test_labels = [0] * len(test_texts)
@@ -137,8 +149,12 @@ def main() -> None:
     )
 
     # Load model
-    model = load_model(cfg.model_checkpoint, cfg, num_classes)
+    model = load_model(cfg.model_checkpoint, cfg)
     model = model.to(device)
+
+    # Get actual number of classes from loaded model
+    actual_num_classes = model.classifier.out_features
+    logger.info(f"Model loaded with {actual_num_classes} classes")
 
     # Make predictions
     logger.info("Making predictions...")
@@ -179,8 +195,11 @@ def main() -> None:
     if cfg.inference.output_predictions:
         logger.info(f"Saving predictions to {cfg.inference.predictions_file}")
 
-        # Create predictions dataframe
-        pred_df = test_df.copy()
+        # Create predictions dataframe using filtered data if available
+        if has_labels:
+            pred_df = test_df_filtered.copy()
+        else:
+            pred_df = test_df.copy()
         pred_df["predicted_label"] = all_predictions.numpy()
         pred_df["prediction_confidence"] = torch.max(all_probabilities, dim=1)[
             0
