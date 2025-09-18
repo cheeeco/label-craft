@@ -104,7 +104,7 @@ def main() -> None:
     logger.info(f"Loaded {len(test_df)} test samples")
 
     # Check if we have ground truth labels
-    has_labels = "label" in test_df.columns
+    has_labels = "cat_id" in test_df.columns
     logger.info(f"Ground truth labels available: {has_labels}")
 
     # Create data module for preprocessing
@@ -112,13 +112,28 @@ def main() -> None:
     data_module.setup()
     num_classes = data_module.num_classes
 
-    # Create test dataset using the same preprocessing
-    test_dataset = data_module.create_dataset(test_df, is_training=False)
+    # Create test dataset using the same preprocessing as training
+    from label_craft.data.data_module import TextClassificationDataset
+
+    # Prepare texts and labels for test data
+    test_texts = test_df["source_name"]
+    if has_labels:
+        # Use the same label encoder from training
+        test_labels = data_module.label_encoder.transform(test_df["cat_id"])
+    else:
+        # Create dummy labels for inference
+        test_labels = [0] * len(test_texts)
+
+    # Create test dataset
+    test_dataset = TextClassificationDataset(
+        test_texts, test_labels, data_module.tokenizer, cfg.data.data.max_length
+    )
+
     test_loader = DataLoader(
         test_dataset,
         batch_size=cfg.inference.batch_size,
         shuffle=False,
-        num_workers=cfg.data.num_workers,
+        num_workers=cfg.data.data.num_workers,
     )
 
     # Load model
