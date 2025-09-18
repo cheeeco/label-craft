@@ -1,6 +1,6 @@
 # Base model configuration
 model:
-  name: "cointegrated/LaBSE-en-ru"
+  name: "cointegrated/rubert-tiny2"
   learning_rate: 2e-5
   dropout: 0.1
   freeze_encoder: true

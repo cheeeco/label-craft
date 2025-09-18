@@ -1,6 +1,6 @@
 # Dataset configuration
 data:
-  batch_size: 16
+  batch_size: 64
   max_length: 256
   test_size: 0.2
   val_size: 0.1
