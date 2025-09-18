@@ -99,8 +99,8 @@ def main() -> None:
     logger.info(f"Using device: {device}")
 
     # Load test data
-    logger.info(f"Loading test data from {cfg.test_data_path}")
-    test_df = pd.read_parquet(cfg.test_data_path)
+    logger.info(f"Loading test data from {cfg.data_path}")
+    test_df = pd.read_parquet(cfg.data_path)
     logger.info(f"Loaded {len(test_df)} test samples")
 
     # Check if we have ground truth labels

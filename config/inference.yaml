@@ -5,11 +5,11 @@ defaults:
   - _self_
 
 # Test data path
-test_data_path: "data/labeled_test.parquet"
+data_path: "data/labeled_test.parquet"
 
 # Model checkpoint path (update this to point to your actual checkpoint)
 # Example: "logs/text_classifier/version_X/checkpoints/best-model-XX-XX.XX.ckpt"
-model_checkpoint: "logs/text_classifier/version_11/checkpoints/best-model.ckpt"
+model_checkpoint: "logs/text_classifier/version_7/checkpoints/best-model-epoch=07-val_f1=0.37.ckpt"
 
 # Inference settings
 inference:
